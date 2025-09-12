@@ -51,7 +51,7 @@ export function LoginForm() {
             Login
           </CardTitle>
           <CardDescription className="text-gray-600">
-          Fleet Service Optimization System
+          Fleet Shuttle Optimization System
           </CardDescription>
         </CardHeader>
         <CardContent>

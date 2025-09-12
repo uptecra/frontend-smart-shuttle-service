@@ -16,7 +16,7 @@ interface Employee {
   distance_to_office: number
 }
 
-interface Service {
+interface Shuttle {
   id: string
   name: string
   morning_shift: string
@@ -27,21 +27,21 @@ interface Service {
   distance_to_office: number
 }
 
-interface ServiceAssignment {
+interface ShuttleAssignment {
   id: string
   employeeId: string
   employee: Employee
-  serviceId: string
-  service: Service
+  ShuttleId: string
+  Shuttle: Shuttle
   assignedDate: string
   status: "active" | "inactive"
 }
 
 export const OptimizationTab = memo(function OptimizationTab() {
-  const [viewMode, setViewMode] = useState<"service" | "employee">("service")
+  const [viewMode, setViewMode] = useState<"Shuttle" | "employee">("Shuttle")
   const [employees, setEmployees] = useState<Employee[]>([])
-  const [services, setServices] = useState<Service[]>([])
-  const [serviceAssignments, setServiceAssignments] = useState<ServiceAssignment[]>([])
+  const [Shuttles, setShuttles] = useState<Shuttle[]>([])
+  const [ShuttleAssignments, setShuttleAssignments] = useState<ShuttleAssignment[]>([])
   const [isOptimizing, setIsOptimizing] = useState(false)
 
   // Optimized data loading with useCallback
@@ -56,21 +56,21 @@ export const OptimizationTab = memo(function OptimizationTab() {
         }
       }
 
-      // Load services
-      const savedServices = localStorage.getItem('services')
-      if (savedServices) {
-        const parsedServices = JSON.parse(savedServices)
-        if (Array.isArray(parsedServices)) {
-          setServices(parsedServices)
+      // Load Shuttles
+      const savedShuttles = localStorage.getItem('Shuttles')
+      if (savedShuttles) {
+        const parsedShuttles = JSON.parse(savedShuttles)
+        if (Array.isArray(parsedShuttles)) {
+          setShuttles(parsedShuttles)
         }
       }
 
       // Load assignments
-      const savedAssignments = localStorage.getItem('serviceAssignments')
+      const savedAssignments = localStorage.getItem('ShuttleAssignments')
       if (savedAssignments) {
         const parsedAssignments = JSON.parse(savedAssignments)
         if (Array.isArray(parsedAssignments)) {
-          setServiceAssignments(parsedAssignments)
+          setShuttleAssignments(parsedAssignments)
         }
       }
     } catch (error) {
@@ -84,9 +84,9 @@ export const OptimizationTab = memo(function OptimizationTab() {
   }, [loadData])
 
     // Save assignments to localStorage with useCallback for performance
-  const saveAssignmentsToStorage = useCallback((assignments: ServiceAssignment[]) => {
+  const saveAssignmentsToStorage = useCallback((assignments: ShuttleAssignment[]) => {
     try {
-      localStorage.setItem('serviceAssignments', JSON.stringify(assignments))
+      localStorage.setItem('ShuttleAssignments', JSON.stringify(assignments))
     } catch (error) {
       console.error('Error saving assignments:', error)
     }
@@ -94,86 +94,86 @@ export const OptimizationTab = memo(function OptimizationTab() {
 
   // Optimized assignment generation with better algorithm
   const generateOptimizedAssignments = useCallback(() => {
-    if (employees.length === 0 || services.length === 0) return
+    if (employees.length === 0 || Shuttles.length === 0) return
     
     setIsOptimizing(true)
     
     // Use requestAnimationFrame for better performance
     requestAnimationFrame(() => {
-      const newAssignments: ServiceAssignment[] = []
-      const serviceCapacityMap = new Map<string, number>()
+      const newAssignments: ShuttleAssignment[] = []
+      const ShuttleCapacityMap = new Map<string, number>()
       
       // Initialize capacity map for O(1) lookups
-      services.forEach(service => {
-        serviceCapacityMap.set(service.id, service.capacity)
+      Shuttles.forEach(Shuttle => {
+        ShuttleCapacityMap.set(Shuttle.id, Shuttle.capacity)
       })
       
       // Sort employees by distance for better optimization
       const sortedEmployees = [...employees].sort((a, b) => a.distance_to_office - b.distance_to_office)
       
-      // Sort services by distance for better matching
-      const sortedServices = [...services].sort((a, b) => a.distance_to_office - b.distance_to_office)
+      // Sort Shuttles by distance for better matching
+      const sortedShuttles = [...Shuttles].sort((a, b) => a.distance_to_office - b.distance_to_office)
       
       // Optimized assignment algorithm
       for (const employee of sortedEmployees) {
-        let bestService = null
+        let bestShuttle = null
         let minDistanceDiff = Infinity
         
-        // Find best service with available capacity
-        for (const service of sortedServices) {
-          const currentCapacity = serviceCapacityMap.get(service.id) || 0
+        // Find best Shuttle with available capacity
+        for (const Shuttle of sortedShuttles) {
+          const currentCapacity = ShuttleCapacityMap.get(Shuttle.id) || 0
           if (currentCapacity > 0) {
-            const distanceDiff = Math.abs(service.distance_to_office - employee.distance_to_office)
+            const distanceDiff = Math.abs(Shuttle.distance_to_office - employee.distance_to_office)
             if (distanceDiff < minDistanceDiff) {
               minDistanceDiff = distanceDiff
-              bestService = service
+              bestShuttle = Shuttle
             }
           }
         }
         
-        if (bestService) {
-          const assignment: ServiceAssignment = {
+        if (bestShuttle) {
+          const assignment: ShuttleAssignment = {
             id: `assignment-${Date.now()}-${employee.id}`,
             employeeId: employee.id,
             employee: employee,
-            serviceId: bestService.id,
-            service: bestService,
+            ShuttleId: bestShuttle.id,
+            Shuttle: bestShuttle,
             assignedDate: new Date().toISOString().split('T')[0],
             status: "active"
           }
           
           newAssignments.push(assignment)
           // Update capacity
-          serviceCapacityMap.set(bestService.id, (serviceCapacityMap.get(bestService.id) || 0) - 1)
+          ShuttleCapacityMap.set(bestShuttle.id, (ShuttleCapacityMap.get(bestShuttle.id) || 0) - 1)
         }
       }
       
-      setServiceAssignments(newAssignments)
+      setShuttleAssignments(newAssignments)
       saveAssignmentsToStorage(newAssignments)
       setIsOptimizing(false)
     })
-  }, [employees, services, saveAssignmentsToStorage])
+  }, [employees, Shuttles, saveAssignmentsToStorage])
 
   // Optimized export function with useCallback
   const exportAssignments = useCallback(() => {
-    if (serviceAssignments.length === 0) return
+    if (ShuttleAssignments.length === 0) return
     
-    const headers = ["Employee ID", "Employee Address", "Employee Coordinates", "Employee Distance to Office", "Service Name", "Service Morning Shift", "Service Evening Shift", "Service Capacity", "Service Coordinates", "Service Distance to Office", "Assigned Date", "Status"]
+    const headers = ["Employee ID", "Employee Address", "Employee Coordinates", "Employee Distance to Office", "Shuttle Name", "Shuttle Morning Shift", "Shuttle Evening Shift", "Shuttle Capacity", "Shuttle Coordinates", "Shuttle Distance to Office", "Assigned Date", "Status"]
     
     // Prepare data for Excel
     const excelData = [
       headers,
-      ...serviceAssignments.map((assignment) => [
+      ...ShuttleAssignments.map((assignment) => [
         assignment.employee.id,
         assignment.employee.address,
         assignment.employee.coordinates,
         assignment.employee.distance_to_office,
-        assignment.service.name,
-        assignment.service.morning_shift,
-        assignment.service.evening_shift,
-        assignment.service.capacity,
-        assignment.service.coordinates,
-        assignment.service.distance_to_office,
+        assignment.Shuttle.name,
+        assignment.Shuttle.morning_shift,
+        assignment.Shuttle.evening_shift,
+        assignment.Shuttle.capacity,
+        assignment.Shuttle.coordinates,
+        assignment.Shuttle.distance_to_office,
         assignment.assignedDate,
         assignment.status,
       ])
@@ -184,7 +184,7 @@ export const OptimizationTab = memo(function OptimizationTab() {
     const worksheet = XLSX.utils.aoa_to_sheet(excelData)
 
     // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Service Assignments")
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Shuttle Assignments")
 
     // Generate Excel file
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
@@ -194,53 +194,53 @@ export const OptimizationTab = memo(function OptimizationTab() {
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = "service-assignments.xlsx"
+    a.download = "Shuttle-assignments.xlsx"
     a.click()
     window.URL.revokeObjectURL(url)
-  }, [serviceAssignments])
+  }, [ShuttleAssignments])
 
   // Memoized data processing for better performance
-  const assignmentsByService = useMemo(() => {
-    return serviceAssignments.reduce((acc, assignment) => {
-      if (!acc[assignment.service.name]) {
-        acc[assignment.service.name] = []
+  const assignmentsByShuttle = useMemo(() => {
+    return ShuttleAssignments.reduce((acc, assignment) => {
+      if (!acc[assignment.Shuttle.name]) {
+        acc[assignment.Shuttle.name] = []
       }
-      acc[assignment.service.name].push(assignment)
+      acc[assignment.Shuttle.name].push(assignment)
       return acc
-    }, {} as Record<string, ServiceAssignment[]>)
-  }, [serviceAssignments])
+    }, {} as Record<string, ShuttleAssignment[]>)
+  }, [ShuttleAssignments])
 
   const assignmentsByEmployee = useMemo(() => {
-    return serviceAssignments.reduce((acc, assignment) => {
+    return ShuttleAssignments.reduce((acc, assignment) => {
       if (!acc[assignment.employee.id]) {
         acc[assignment.employee.id] = []
       }
       acc[assignment.employee.id].push(assignment)
       return acc
-    }, {} as Record<string, ServiceAssignment[]>)
-  }, [serviceAssignments])
+    }, {} as Record<string, ShuttleAssignment[]>)
+  }, [ShuttleAssignments])
 
   const stats = useMemo(() => {
-    const totalEmployees = serviceAssignments.length
-    const totalServices = Object.keys(assignmentsByService).length
-    const totalCapacity = services.reduce((sum, service) => sum + service.capacity, 0)
-    const assignedCapacity = serviceAssignments.length
+    const totalEmployees = ShuttleAssignments.length
+    const totalShuttles = Object.keys(assignmentsByShuttle).length
+    const totalCapacity = Shuttles.reduce((sum, Shuttle) => sum + Shuttle.capacity, 0)
+    const assignedCapacity = ShuttleAssignments.length
     
     return {
       totalEmployees,
-      totalServices,
+      totalShuttles,
       totalCapacity,
       assignedCapacity
     }
-  }, [serviceAssignments, assignmentsByService, services])
+  }, [ShuttleAssignments, assignmentsByShuttle, Shuttles])
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Service Optimization Assignments</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Shuttle Optimization Assignments</h2>
           <p className="text-muted-foreground">
-            View and manage employees assigned to services
+            View and manage employees assigned to Shuttles
           </p>
         </div>
         <div className="flex gap-2">
@@ -248,7 +248,7 @@ export const OptimizationTab = memo(function OptimizationTab() {
             <Download className="mr-2 h-4 w-4" />
             Export to Excel
           </Button>
-          <Button onClick={generateOptimizedAssignments} disabled={isOptimizing || employees.length === 0 || services.length === 0}>
+          <Button onClick={generateOptimizedAssignments} disabled={isOptimizing || employees.length === 0 || Shuttles.length === 0}>
             {isOptimizing ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
             {isOptimizing ? "Optimizing..." : "Generate Assignments"}
           </Button>
@@ -268,12 +268,12 @@ export const OptimizationTab = memo(function OptimizationTab() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Services</CardTitle>
+            <CardTitle className="text-sm font-medium">Active Shuttles</CardTitle>
             <Bus className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalServices}</div>
-            <p className="text-xs text-muted-foreground">of {services.length} total</p>
+            <div className="text-2xl font-bold">{stats.totalShuttles}</div>
+            <p className="text-xs text-muted-foreground">of {Shuttles.length} total</p>
           </CardContent>
         </Card>
         <Card>
@@ -288,11 +288,11 @@ export const OptimizationTab = memo(function OptimizationTab() {
         </Card>
       </div>
 
-      <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "service" | "employee")} className="w-full">
+      <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "Shuttle" | "employee")} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="service" className="flex items-center gap-2">
+          <TabsTrigger value="Shuttle" className="flex items-center gap-2">
             <Bus className="h-4 w-4" />
-            By Service
+            By Shuttle
           </TabsTrigger>
           <TabsTrigger value="employee" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
@@ -300,16 +300,16 @@ export const OptimizationTab = memo(function OptimizationTab() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="service" className="space-y-4">
-          {Object.entries(assignmentsByService).map(([serviceName, assignments]) => (
-            <Card key={serviceName}>
+        <TabsContent value="Shuttle" className="space-y-4">
+          {Object.entries(assignmentsByShuttle).map(([ShuttleName, assignments]) => (
+            <Card key={ShuttleName}>
         <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Bus className="h-5 w-5" />
-                  {serviceName}
+                  {ShuttleName}
                 </CardTitle>
                 <CardDescription>
-                  {assignments[0]?.service.name} • {assignments.length} employees
+                  {assignments[0]?.Shuttle.name} • {assignments.length} employees
                 </CardDescription>
         </CardHeader>
         <CardContent>
@@ -338,10 +338,10 @@ export const OptimizationTab = memo(function OptimizationTab() {
                         <TableCell className="font-mono text-sm">{assignment.employee.coordinates}</TableCell>
                         <TableCell>{assignment.employee.distance_to_office} km</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{assignment.service.morning_shift}</Badge>
+                          <Badge variant="outline">{assignment.Shuttle.morning_shift}</Badge>
                         </TableCell>
                   <TableCell>
-                          <Badge variant="outline">{assignment.service.evening_shift}</Badge>
+                          <Badge variant="outline">{assignment.Shuttle.evening_shift}</Badge>
                   </TableCell>
                         <TableCell>{new Date(assignment.assignedDate).toLocaleDateString('en-US')}</TableCell>
                 </TableRow>
@@ -374,26 +374,26 @@ export const OptimizationTab = memo(function OptimizationTab() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Service Name</TableHead>
+                        <TableHead>Shuttle Name</TableHead>
                         <TableHead>Morning Shift</TableHead>
                         <TableHead>Evening Shift</TableHead>
-                        <TableHead>Service Capacity</TableHead>
-                        <TableHead>Service Distance</TableHead>
+                        <TableHead>Shuttle Capacity</TableHead>
+                        <TableHead>Shuttle Distance</TableHead>
                         <TableHead>Assigned Date</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {assignments.map((assignment) => (
                         <TableRow key={assignment.id}>
-                          <TableCell className="font-medium">{assignment.service.name}</TableCell>
+                          <TableCell className="font-medium">{assignment.Shuttle.name}</TableCell>
                           <TableCell>
-                            <Badge variant="outline">{assignment.service.morning_shift}</Badge>
+                            <Badge variant="outline">{assignment.Shuttle.morning_shift}</Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline">{assignment.service.evening_shift}</Badge>
+                            <Badge variant="outline">{assignment.Shuttle.evening_shift}</Badge>
                           </TableCell>
-                          <TableCell>{assignment.service.capacity}</TableCell>
-                          <TableCell>{assignment.service.distance_to_office} km</TableCell>
+                          <TableCell>{assignment.Shuttle.capacity}</TableCell>
+                          <TableCell>{assignment.Shuttle.distance_to_office} km</TableCell>
                           <TableCell>{new Date(assignment.assignedDate).toLocaleDateString('en-US')}</TableCell>
                         </TableRow>
                       ))}

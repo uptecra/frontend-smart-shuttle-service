@@ -9,8 +9,8 @@ export const DashboardTab = memo(function DashboardTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Service Optimization Dashboard</h2>
-        <p className="text-muted-foreground">Monitor and optimize employee shuttle services for Zorlu Holding</p>
+        <h2 className="text-3xl font-bold tracking-tight">Shuttle Optimization Dashboard</h2>
+        <p className="text-muted-foreground">Monitor and optimize employee shuttle Shuttles for Zorlu Holding</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -27,7 +27,7 @@ export const DashboardTab = memo(function DashboardTab() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Services</CardTitle>
+            <CardTitle className="text-sm font-medium">Active Shuttles</CardTitle>
             <IconTruck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -63,7 +63,7 @@ export const DashboardTab = memo(function DashboardTab() {
         <Card>
           <CardHeader>
             <CardTitle>Recent Optimizations</CardTitle>
-            <CardDescription>Latest service route optimizations</CardDescription>
+            <CardDescription>Latest Shuttle route optimizations</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">

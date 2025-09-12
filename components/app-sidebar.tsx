@@ -10,6 +10,7 @@ import {
   IconHelp,
   IconSearch,
   IconBuildingFactory2,
+  IconUserPlus,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -43,14 +44,15 @@ const data = {
           title: "Add Employee",
           url: "#",
           key: "add-employee",
+          icon: IconUserPlus,
         }
       ]
     },
     {
-      title: "Services",
+      title: "Shuttles",
       url: "#",
       icon: IconTruck,
-      key: "services",
+      key: "Shuttles",
     },
     {
       title: "Optimization",

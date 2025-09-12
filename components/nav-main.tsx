@@ -51,6 +51,7 @@ export function NavMain({
     subItems?: {
       title: string
       key: string
+      icon?: Icon
     }[]
   }[]
   activeTab?: string
@@ -144,7 +145,7 @@ export function NavMain({
               <SidebarMenuItem>
                 <SidebarMenuButton
                   tooltip={item.title}
-                  onClick={() => setActiveTab?.(item.key)}
+                  onClick={() => { setActiveTab?.(item.key); if (typeof window !== 'undefined') window.location.hash = item.key; }}
                   className={activeTab === item.key ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}
                 >
                   {item.icon && <item.icon />}
@@ -157,9 +158,10 @@ export function NavMain({
                     <SidebarMenuItem key={subItem.key}>
                       <SidebarMenuButton
                         tooltip={subItem.title}
-                        onClick={() => setActiveTab?.(subItem.key)}
+                        onClick={() => { setActiveTab?.(subItem.key); if (typeof window !== 'undefined') window.location.hash = subItem.key; }}
                         className={`text-sm ${activeTab === subItem.key ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}`}
                       >
+                        {subItem.icon && <subItem.icon />}
                         <span>{subItem.title}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
