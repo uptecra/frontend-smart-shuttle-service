@@ -3,15 +3,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { IconUsers, IconTruck, IconMapPin, IconClock } from "@tabler/icons-react"
+import HereMap from "@/components/here-map"
 import { useMemo, memo } from "react"
 
 export const DashboardTab = memo(function DashboardTab() {
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Shuttle Optimization Dashboard</h2>
-        <p className="text-muted-foreground">Monitor and optimize employee shuttle Shuttles for Zorlu Holding</p>
-      </div>
+      
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -59,6 +57,15 @@ export const DashboardTab = memo(function DashboardTab() {
         </Card>
       </div>
 
+    
+
+      <Card>
+        
+        <CardContent className="p-0">
+          <HereMap className="h-[350px] w-full rounded-md border" />
+        </CardContent>
+      </Card>
+
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -90,30 +97,7 @@ export const DashboardTab = memo(function DashboardTab() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>System Status</CardTitle>
-            <CardDescription>Current system health and alerts</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span>Data Import Status</span>
-              <Badge variant="default">Active</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Optimization Engine</span>
-              <Badge variant="default">Running</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Route Calculations</span>
-              <Badge variant="secondary">Idle</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Last Sync</span>
-              <Badge variant="outline">2 min ago</Badge>
-            </div>
-          </CardContent>
-        </Card>
+        
       </div>
     </div>
   )
