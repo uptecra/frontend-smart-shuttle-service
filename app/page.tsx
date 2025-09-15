@@ -50,15 +50,16 @@ export default function Page() {
     <ProtectedRoute>
       <SidebarProvider>
         <AppSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-        <main className="flex-1 overflow-hidden">
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-            <SidebarTrigger className="-ml-1" />
-            <div className="flex items-center gap-2 flex-1">
-              <h1 className="text-lg font-semibold">Zorlu Holding - Shuttle Optimization Dashboard</h1>
-            </div>
-          </header>
-          <div className="flex-1 overflow-auto p-4">{ActiveTabComponent}</div>
-        </main>
+        <main className="flex min-h-0 flex-1 overflow-hidden">
+  <div className="flex items-start  py-3">
+    <SidebarTrigger className="inline-flex h-10 w-10 p-0 items-center justify-center" />
+  </div>
+
+  <div className="flex-1 overflow-auto p-4">
+    {ActiveTabComponent}
+  </div>
+</main>
+
       </SidebarProvider>
     </ProtectedRoute>
   )

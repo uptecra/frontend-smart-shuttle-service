@@ -64,89 +64,13 @@ export const EmployeesTab = memo(function EmployeesTab() {
       try {
         const parsedEmployees = JSON.parse(savedEmployees)
         if (Array.isArray(parsedEmployees)) {
-          // Backfill missing active state to true
           const normalized = parsedEmployees.map((e: Employee) => ({...e, active: e.active ?? true}))
           setEmployees(normalized)
           localStorage.setItem('employees', JSON.stringify(normalized))
-        } else {
-          // If no saved data, use default data
-          const defaultEmployees: Employee[] = [
-            {
-              id: "1",
-              name: "Ahmet Yılmaz",
-              email: "ahmet.yilmaz@example.com",
-              phone: "+90 532 000 0001",
-              address: "Levazım Mah. Koru Sok. No:2 Beşiktaş/İstanbul",
-              coordinates: "41.0782,29.0174",
-              distance_to_office: 2.5,
-              active: true,
-            },
-            {
-              id: "2",
-              name: "Ayşe Demir",
-              email: "ayse.demir@example.com",
-              phone: "+90 532 000 0002",
-              address: "Etiler Mah. Nispetiye Cad. No:15 Beşiktaş/İstanbul",
-              coordinates: "41.0821,29.0321",
-              distance_to_office: 1.8,
-              active: true,
-            },
-          ]
-          setEmployees(defaultEmployees)
-          localStorage.setItem('employees', JSON.stringify(defaultEmployees))
         }
       } catch (error) {
         console.error('Error loading saved employees:', error)
-        // If error, use default data
-        const defaultEmployees: Employee[] = [
-          {
-            id: "1",
-            name: "Ahmet Yılmaz",
-            email: "ahmet.yilmaz@example.com",
-            phone: "+90 532 000 0001",
-            address: "Levazım Mah. Koru Sok. No:2 Beşiktaş/İstanbul",
-            coordinates: "41.0782,29.0174",
-            distance_to_office: 2.5,
-            active: true,
-          },
-          {
-            id: "2",
-            name: "Ayşe Demir",
-            email: "ayse.demir@example.com",
-            phone: "+90 532 000 0002",
-            address: "Etiler Mah. Nispetiye Cad. No:15 Beşiktaş/İstanbul",
-            coordinates: "41.0821,29.0321",
-            distance_to_office: 1.8,
-            active: true,
-          },
-        ]
-        setEmployees(defaultEmployees)
-        localStorage.setItem('employees', JSON.stringify(defaultEmployees))
       }
-    } else {
-      // If no saved data, use default data
-      const defaultEmployees: Employee[] = [
-        {
-          id: "1",
-          name: "Ahmet Yılmaz",
-          email: "ahmet.yilmaz@example.com",
-          phone: "+90 532 000 0001",
-          address: "Levazım Mah. Koru Sok. No:2 Beşiktaş/İstanbul",
-          coordinates: "41.0782,29.0174",
-          distance_to_office: 2.5,
-        },
-        {
-          id: "2",
-          name: "Ayşe Demir",
-          email: "ayse.demir@example.com",
-          phone: "+90 532 000 0002",
-          address: "Etiler Mah. Nispetiye Cad. No:15 Beşiktaş/İstanbul",
-          coordinates: "41.0821,29.0321",
-          distance_to_office: 1.8,
-        },
-      ]
-      setEmployees(defaultEmployees)
-      localStorage.setItem('employees', JSON.stringify(defaultEmployees))
     }
   }, [])
 

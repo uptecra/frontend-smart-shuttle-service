@@ -57,69 +57,12 @@ export const ShuttlesTab = memo(function ShuttlesTab() {
         const parsedShuttles = JSON.parse(savedShuttles)
         if (Array.isArray(parsedShuttles) && parsedShuttles.length > 0) {
           setShuttles(parsedShuttles)
-          return
         }
       } catch (error) {
         console.error('Error loading saved Shuttles:', error)
       }
     }
-    
-    // If no saved data or error, use default data
-    const defaultShuttles: Shuttle[] = [
-    {
-      id: "1",
-        name: "Kadıköy - Zorlu Center",
-        morning_shift: "07:30",
-        evening_shift: "18:30",
-      capacity: 45,
-        map_url: "https://maps.google.com/kadikoy-zorlu",
-        coordinates: "40.9909,29.0303",
-        distance_to_office: 12.5,
-    },
-    {
-      id: "2",
-        name: "Beşiktaş - Zorlu Center",
-        morning_shift: "08:00",
-        evening_shift: "18:00",
-      capacity: 35,
-        map_url: "https://maps.google.com/besiktas-zorlu",
-        coordinates: "41.0422,29.0083",
-        distance_to_office: 3.2,
-    },
-    {
-      id: "3",
-        name: "Levent - Zorlu Center",
-        morning_shift: "07:45",
-        evening_shift: "18:15",
-      capacity: 50,
-        map_url: "https://maps.google.com/levent-zorlu",
-        coordinates: "41.0668,29.0168",
-        distance_to_office: 1.8,
-      },
-      {
-        id: "4",
-        name: "Etiler - Zorlu Center",
-        morning_shift: "08:15",
-        evening_shift: "17:45",
-        capacity: 40,
-        map_url: "https://maps.google.com/etiler-zorlu",
-        coordinates: "41.0789,29.0321",
-        distance_to_office: 2.1,
-      },
-      {
-        id: "5",
-        name: "Ortaköy - Zorlu Center",
-        morning_shift: "08:30",
-        evening_shift: "17:30",
-        capacity: 30,
-        map_url: "https://maps.google.com/ortakoy-zorlu",
-        coordinates: "41.0473,29.0273",
-        distance_to_office: 4.5,
-      },
-    ]
-    setShuttles(defaultShuttles)
-    saveShuttlesToStorage(defaultShuttles)
-  }, [saveShuttlesToStorage])
+  }, [])
 
   // Save data to local storage whenever Shuttles change
   useEffect(() => {

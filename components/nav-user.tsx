@@ -101,21 +101,18 @@ export function NavUser() {
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <IconUserCircle className="mr-2 h-4 w-4" />
-                Hesap
+                Account
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconCreditCard className="mr-2 h-4 w-4" />
-                Faturalama
-              </DropdownMenuItem>
+              
               <DropdownMenuItem>
                 <IconNotification className="mr-2 h-4 w-4" />
-                Bildirimler
+                Notification
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
               <IconLogout className="mr-2 h-4 w-4" />
-              Çıkış Yap
+              Logout
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

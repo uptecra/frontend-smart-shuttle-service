@@ -1,6 +1,7 @@
 "use client"
 
 import type * as React from "react"
+import Image from "next/image"
 import {
   IconUsers,
   IconTruck,
@@ -9,7 +10,6 @@ import {
   IconSettings,
   IconHelp,
   IconSearch,
-  IconBuildingFactory2,
   IconUserPlus,
 } from "@tabler/icons-react"
 
@@ -24,6 +24,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 
 const data = {
@@ -91,12 +92,21 @@ export function AppSidebar({ activeTab, setActiveTab, ...props }: AppSidebarProp
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
-              <a href="#">
-                <IconBuildingFactory2 className="!size-5" />
-                <span className="text-base font-semibold">Zorlu Holding</span>
-              </a>
-            </SidebarMenuButton>
+          <SidebarMenuSubItem className="data-[slot=sidebar-menu-button]:! mt-1.5 h-15 ">
+  <a href="#" className="flex flex-col items-start ms-2">
+    <Image 
+      src="/upfleet.png" 
+      alt="Upfleet" 
+      width={500} 
+      height={500} 
+      className="h-7 w-18" 
+    />
+    <span className="text-sm font-semibold mt-1 text-gray-600">
+      Shuttle Optimization
+    </span>
+  </a>
+</SidebarMenuSubItem>
+
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
