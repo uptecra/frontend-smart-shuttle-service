@@ -35,19 +35,26 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
-  const [token, setToken] = useState<string | null>('fake-token')
-  const [isLoading, setIsLoading] = useState(false)
+  const [token, setToken] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     // Check for existing user on app load
-    const storedUser = localStorage.getItem('fakeUser')
-    if (storedUser) {
-      try {
+    try {
+      const storedUser = localStorage.getItem('fakeUser')
+      const storedToken = localStorage.getItem('authToken')
+      if (storedUser) {
         const userData = JSON.parse(storedUser)
         setUser(userData)
-      } catch (error) {
-        localStorage.removeItem('fakeUser')
       }
+      if (storedToken) {
+        setToken(storedToken)
+      }
+    } catch (error) {
+      localStorage.removeItem('fakeUser')
+      localStorage.removeItem('authToken')
+    } finally {
+      setIsLoading(false)
     }
   }, [])
 
@@ -71,6 +78,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         setUser(fakeUser)
         localStorage.setItem('fakeUser', JSON.stringify(fakeUser))
+        const fakeToken = 'fake-token'
+        setToken(fakeToken)
+        localStorage.setItem('authToken', fakeToken)
         setIsLoading(false)
         return true
       } else if (username === 'user' && password === 'user123') {
@@ -84,6 +94,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         setUser(fakeUser)
         localStorage.setItem('fakeUser', JSON.stringify(fakeUser))
+        const fakeToken = 'fake-token'
+        setToken(fakeToken)
+        localStorage.setItem('authToken', fakeToken)
         setIsLoading(false)
         return true
       } else {

@@ -3,6 +3,8 @@
 import type React from "react"
 
 import { useState, useEffect, useMemo, useCallback, memo } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useDebounce } from "@/hooks/use-debounce"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,6 +37,7 @@ interface Shuttle {
 
 export const ShuttlesTab = memo(function ShuttlesTab() {
   const [Shuttles, setShuttles] = useState<Shuttle[]>([])
+  const router = useRouter()
 
   const [searchQuery, setSearchQuery] = useState("")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -150,7 +153,7 @@ export const ShuttlesTab = memo(function ShuttlesTab() {
   }
 
   const handleExportExcel = () => {
-    const headers = ["Shuttle Name", "Morning Shift", "Evening Shift", "Capacity", "Map URL", "Start Location Coordinate", "Distance to Office (km)"]
+    const headers = ["Shuttle Name", "Morning Shift", "Evening Shift", "Capacity", "Map URL", "Start Location Coordinate", "Distance (km)"]
     const data = [
       headers,
       ...Shuttles.map((Shuttle) => [
@@ -464,27 +467,30 @@ export const ShuttlesTab = memo(function ShuttlesTab() {
                 <TableHead>Evening Shift</TableHead>
                 <TableHead>Capacity</TableHead>
                 <TableHead>Map URL </TableHead>
-                <TableHead>Start Location Coordinate</TableHead>
-                <TableHead>Distance to Office (km)</TableHead>
+                <TableHead>Start Loc. Coordinate</TableHead>
+                <TableHead>Distance (km)</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredShuttles.map((Shuttle) => (
                 <TableRow key={Shuttle.id}>
-                  <TableCell className="font-medium">{Shuttle.name}</TableCell>
+                  <TableCell className="font-medium truncate max-w-[200px]">{Shuttle.name}</TableCell>
                   <TableCell>{Shuttle.morning_shift}</TableCell>
                   <TableCell>{Shuttle.evening_shift}</TableCell>
                   <TableCell>{Shuttle.capacity}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">
+                  <TableCell className="max-w-[200px] truncate max-w-[150px]">
                     <a href={Shuttle.map_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                       {Shuttle.map_url}
                     </a>
                   </TableCell>
-                  <TableCell className="max-w-[150px] truncate">{Shuttle.coordinates}</TableCell>
+                  <TableCell className="max-w-[100px] truncate">{Shuttle.coordinates}</TableCell>
                   <TableCell>{Shuttle.distance_to_office} km</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => router.push(`/shuttles/${Shuttle.id}`)}>
+                        Details
+                      </Button>
                       <Button variant="ghost" size="sm" onClick={() => handleEditShuttle(Shuttle)}>
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -561,7 +567,7 @@ export const ShuttlesTab = memo(function ShuttlesTab() {
                   className="col-span-3"
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
+              <div className="grid grid-cols-4 items-center gap-4 ">
                 <Label htmlFor="edit-map-url" className="text-right">
                   Map URL
                 </Label>
@@ -585,7 +591,7 @@ export const ShuttlesTab = memo(function ShuttlesTab() {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="edit-distance" className="text-right">
-                  Distance to Office
+                  Distance (km)
                 </Label>
                 <Input
                   id="edit-distance"
