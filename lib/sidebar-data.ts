@@ -59,6 +59,10 @@ export const sidebarData = {
       icon: IconSearch,
     },
   ],
+<<<<<<< HEAD
 }
 
 
+=======
+}
+>>>>>>> b798db6 (pickup points 1)

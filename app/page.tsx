@@ -63,4 +63,8 @@ export default function Page() {
       </SidebarProvider>
     </ProtectedRoute>
   )
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> b798db6 (pickup points 1)

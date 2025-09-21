@@ -174,4 +174,8 @@ export function NavMain({
       </SidebarGroupContent>
     </SidebarGroup>
   )
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> b798db6 (pickup points 1)
