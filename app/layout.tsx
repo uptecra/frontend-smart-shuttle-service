@@ -1,29 +1,35 @@
-import type { Metadata } from 'next'
-import { GeistSans } from 'geist/font/sans'
-import { GeistMono } from 'geist/font/mono'
-import { AuthProvider } from '@/contexts/auth-context'
-import { Toaster } from '@/components/ui/sonner'
-import './globals.css'
+import type { Metadata, Viewport } from "next";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
+import { AuthProvider } from "@/contexts/auth-context";
+import { Toaster } from "@/components/ui/sonner";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'Upfleet Servis Optimizasyonu',
-  description: 'Uptecra',
-  generator: 'Uptecra',
-}
+  title: "Upfleet Servis Optimizasyonu",
+  description: "Uptecra",
+  generator: "Uptecra",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="en">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <AuthProvider>
           {children}
-          <Toaster richColors closeButton position="top-right" />
+          <Toaster richColors closeButton position="bottom-right" />
         </AuthProvider>
       </body>
     </html>
-  )
+  );
 }

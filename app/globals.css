@@ -122,4 +122,201 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Sidebar layout fixes */
+  .sidebar-wrapper {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+  }
+  
+  /* Ensure proper spacing between sidebar and content */
+  [data-slot="sidebar-wrapper"] {
+    --sidebar-width: 16rem;
+    --sidebar-width-icon: 3rem;
+  }
+  
+  /* Fix content positioning */
+  [data-slot="sidebar-inset"] {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+@layer utilities {
+  /* Mobile-specific utilities */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  .mobile-tap-highlight {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .mobile-safe-area {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Responsive text utilities */
+  .text-responsive-xs {
+    @apply text-xs sm:text-sm;
+  }
+  
+  .text-responsive-sm {
+    @apply text-sm sm:text-base;
+  }
+  
+  .text-responsive-base {
+    @apply text-base sm:text-lg;
+  }
+  
+  .text-responsive-lg {
+    @apply text-lg sm:text-xl;
+  }
+  
+  .text-responsive-xl {
+    @apply text-xl sm:text-2xl;
+  }
+  
+  /* Mobile-friendly spacing */
+  .mobile-px {
+    @apply px-2 sm:px-4 lg:px-6;
+  }
+  
+  .mobile-py {
+    @apply py-2 sm:py-4 lg:py-6;
+  }
+  
+  .mobile-p {
+    @apply p-2 sm:p-4 lg:p-6;
+  }
+  
+  .mobile-mx {
+    @apply mx-2 sm:mx-4 lg:mx-6;
+  }
+  
+  .mobile-my {
+    @apply my-2 sm:my-4 lg:my-6;
+  }
+  
+  .mobile-m {
+    @apply m-2 sm:m-4 lg:m-6;
+  }
+  
+  /* Mobile-friendly gaps */
+  .mobile-gap {
+    @apply gap-2 sm:gap-4 lg:gap-6;
+  }
+  
+  .mobile-gap-sm {
+    @apply gap-1 sm:gap-2 lg:gap-3;
+  }
+  
+  .mobile-gap-lg {
+    @apply gap-4 sm:gap-6 lg:gap-8;
+  }
+  
+  /* Mobile-friendly grid */
+  .mobile-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+  
+  .mobile-grid-2 {
+    @apply grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5;
+  }
+  
+  .mobile-grid-3 {
+    @apply grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6;
+  }
+  
+  /* Mobile-friendly flex */
+  .mobile-flex-col {
+    @apply flex flex-col sm:flex-row;
+  }
+  
+  .mobile-flex-wrap {
+    @apply flex flex-wrap;
+  }
+  
+  .mobile-items-center {
+    @apply items-center;
+  }
+  
+  .mobile-justify-between {
+    @apply justify-between;
+  }
+  
+  .mobile-justify-center {
+    @apply justify-center;
+  }
+  
+  /* Mobile-friendly visibility */
+  .mobile-hidden {
+    @apply hidden sm:block;
+  }
+  
+  .mobile-visible {
+    @apply block sm:hidden;
+  }
+  
+  .mobile-table-cell {
+    @apply hidden sm:table-cell;
+  }
+  
+  .mobile-table-cell-lg {
+    @apply hidden lg:table-cell;
+  }
+  
+  .mobile-table-cell-xl {
+    @apply hidden xl:table-cell;
+  }
+  
+  /* Mobile-friendly width */
+  .mobile-w-full {
+    @apply w-full sm:w-auto;
+  }
+  
+  .mobile-w-auto {
+    @apply w-auto sm:w-full;
+  }
+  
+  /* Mobile-friendly height */
+  .mobile-h-auto {
+    @apply h-auto sm:h-full;
+  }
+  
+  .mobile-min-h-screen {
+    @apply min-h-screen;
+  }
+  
+  /* Mobile-friendly overflow */
+  .mobile-overflow-x {
+    @apply overflow-x-auto;
+  }
+  
+  .mobile-overflow-y {
+    @apply overflow-y-auto;
+  }
+  
+  /* Mobile-friendly border radius */
+  .mobile-rounded {
+    @apply rounded-md sm:rounded-lg;
+  }
+  
+  .mobile-rounded-lg {
+    @apply rounded-lg sm:rounded-xl;
+  }
+  
+  /* Mobile-friendly shadows */
+  .mobile-shadow {
+    @apply shadow-sm sm:shadow-md;
+  }
+  
+  .mobile-shadow-lg {
+    @apply shadow-md sm:shadow-lg;
+  }
 }

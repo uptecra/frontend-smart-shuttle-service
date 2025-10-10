@@ -6,7 +6,7 @@ import {
   IconHelp,
   IconSearch,
   IconUserPlus,
-} from "@tabler/icons-react"
+} from "@tabler/icons-react";
 
 export const sidebarData = {
   user: {
@@ -20,21 +20,14 @@ export const sidebarData = {
       url: "#",
       icon: IconUsers,
       key: "employees",
-      subItems: [
-        {
-          title: "Add Employee",
-          url: "#",
-          key: "add-employee",
-          icon: IconUserPlus,
-        },
-      ],
     },
     {
       title: "Shuttles",
       url: "#",
       icon: IconTruck,
-      key: "Shuttles",
+      key: "shuttles",
     },
+
     {
       title: "Optimization",
       url: "#",
@@ -59,10 +52,4 @@ export const sidebarData = {
       icon: IconSearch,
     },
   ],
-<<<<<<< HEAD
-}
-
-
-=======
-}
->>>>>>> b798db6 (pickup points 1)
+};

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Test Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .info {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Shuttle Service Data Management</h1>
+        
+        <div class="info">
+            <h3>Instructions:</h3>
+            <ol>
+                <li>Import your real employee data from the <strong>Employees</strong> tab</li>
+                <li>Import your real shuttle data from the <strong>Shuttles</strong> tab</li>
+                <li>Go to the <strong>Optimization</strong> tab</li>
+                <li>Click "Generate Assignments" to create optimized assignments</li>
+            </ol>
+            <p><strong>Note:</strong> This system now uses only your imported data, no fake test data.</p>
+        </div>
+
+        <button onclick="checkData()">Check Current Data</button>
+        <button onclick="clearAllData()">Clear All Data</button>
+
+        <div id="status"></div>
+
+        <div id="dataInfo" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        const sampleEmployees = [
+            {
+                id: "emp-001",
+                name: "Ahmet Yılmaz",
+                email: "ahmet.yilmaz@company.com",
+                phone: "+90 532 123 4567",
+                address: "Kadıköy, İstanbul",
+                coordinates: "41.0082,28.9784",
+                distance_to_office: 5.2,
+                active: true
+            },
+            {
+                id: "emp-002", 
+                name: "Ayşe Demir",
+                email: "ayse.demir@company.com",
+                phone: "+90 533 234 5678",
+                address: "Beşiktaş, İstanbul",
+                coordinates: "41.0123,28.9856",
+                distance_to_office: 3.8,
+                active: true
+            },
+            {
+                id: "emp-003",
+                name: "Mehmet Kaya",
+                email: "mehmet.kaya@company.com", 
+                phone: "+90 534 345 6789",
+                address: "Şişli, İstanbul",
+                coordinates: "41.0067,28.9723",
+                distance_to_office: 4.1,
+                active: true
+            },
+            {
+                id: "emp-004",
+                name: "Fatma Özkan",
+                email: "fatma.ozkan@company.com",
+                phone: "+90 535 456 7890", 
+                address: "Beyoğlu, İstanbul",
+                coordinates: "41.0156,28.9901",
+                distance_to_office: 2.9,
+                active: true
+            },
+            {
+                id: "emp-005",
+                name: "Ali Çelik",
+                email: "ali.celik@company.com",
+                phone: "+90 536 567 8901",
+                address: "Üsküdar, İstanbul", 
+                coordinates: "41.0034,28.9654",
+                distance_to_office: 6.3,
+                active: true
+            },
+            {
+                id: "emp-006",
+                name: "Zeynep Arslan",
+                email: "zeynep.arslan@company.com",
+                phone: "+90 537 678 9012",
+                address: "Maltepe, İstanbul",
+                coordinates: "40.9856,29.1234",
+                distance_to_office: 8.7,
+                active: true
+            },
+            {
+                id: "emp-007", 
+                name: "Can Özdemir",
+                email: "can.ozdemir@company.com",
+                phone: "+90 538 789 0123",
+                address: "Bakırköy, İstanbul",
+                coordinates: "40.9876,28.8765",
+                distance_to_office: 7.2,
+                active: true
+            },
+            {
+                id: "emp-008",
+                name: "Elif Yıldız",
+                email: "elif.yildiz@company.com",
+                phone: "+90 539 890 1234",
+                address: "Pendik, İstanbul",
+                coordinates: "40.8765,29.2345",
+                distance_to_office: 12.1,
+                active: true
+            }
+        ];
+
+        const sampleShuttles = [
+            {
+                id: "shuttle-001",
+                service_name: "Shuttle A - Morning Route",
+                driver_name: "Hasan Şahin",
+                driver_phone: "+90 540 111 2233",
+                morning_shift: "07:00-09:00",
+                evening_shift: "17:00-19:00", 
+                capacity: 12,
+                map_url: "",
+                coordinates: "41.0082,28.9784;41.0123,28.9856;41.0067,28.9723;41.0156,28.9901;41.0034,28.9654",
+                distance_to_office: 4.5
+            },
+            {
+                id: "shuttle-002",
+                service_name: "Shuttle B - Evening Route", 
+                driver_name: "Murat Kılıç",
+                driver_phone: "+90 541 222 3344",
+                morning_shift: "08:00-10:00",
+                evening_shift: "18:00-20:00",
+                capacity: 15,
+                map_url: "",
+                coordinates: "40.9856,29.1234;40.9876,28.8765;40.8765,29.2345;41.0082,28.9784;41.0123,28.9856",
+                distance_to_office: 6.8
+            },
+            {
+                id: "shuttle-003",
+                service_name: "Shuttle C - Express Route",
+                driver_name: "Emre Doğan", 
+                driver_phone: "+90 542 333 4455",
+                morning_shift: "07:30-09:30",
+                evening_shift: "17:30-19:30",
+                capacity: 10,
+                map_url: "",
+                coordinates: "41.0067,28.9723;41.0156,28.9901;41.0034,28.9654;40.9856,29.1234;40.9876,28.8765",
+                distance_to_office: 5.2
+            }
+        ];
+
+        // Test data setup removed - system now uses only imported data
+
+        function clearAllData() {
+            try {
+                localStorage.removeItem('employees');
+                localStorage.removeItem('Shuttles');
+                localStorage.removeItem('ShuttleAssignments');
+                
+                document.getElementById('status').innerHTML = 
+                    '<div class="success">✅ All data cleared!</div>';
+                
+                checkData();
+            } catch (error) {
+                document.getElementById('status').innerHTML = 
+                    '<div class="error">❌ Error clearing data: ' + error.message + '</div>';
+            }
+        }
+
+        function checkData() {
+            try {
+                const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+                const shuttles = JSON.parse(localStorage.getItem('Shuttles') || '[]');
+                const assignments = JSON.parse(localStorage.getItem('ShuttleAssignments') || '[]');
+                
+                document.getElementById('dataInfo').innerHTML = `
+                    <h3>Current Data Status:</h3>
+                    <ul>
+                        <li><strong>Employees:</strong> ${employees.length}</li>
+                        <li><strong>Shuttles:</strong> ${shuttles.length}</li>
+                        <li><strong>Assignments:</strong> ${assignments.length}</li>
+                    </ul>
+                    ${employees.length > 0 ? '<p class="success">✅ Ready for optimization testing!</p>' : '<p class="error">❌ No data found. Click "Setup Test Data" first.</p>'}
+                `;
+            } catch (error) {
+                document.getElementById('dataInfo').innerHTML = 
+                    '<div class="error">❌ Error checking data: ' + error.message + '</div>';
+            }
+        }
+
+        // Check data on page load
+        window.onload = checkData;
+    </script>
+</body>
+</html>

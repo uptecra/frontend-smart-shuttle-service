@@ -1,16 +1,28 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect, useMemo, useCallback, memo } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useDebounce } from "@/hooks/use-debounce"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useDebounce } from "@/hooks/use-debounce";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -19,235 +31,651 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
-import { Plus, Upload, Download, Trash2, Edit, Bus, Search } from "lucide-react"
-import * as XLSX from 'xlsx'
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Plus,
+  Upload,
+  Download,
+  Trash2,
+  Edit,
+  Bus,
+  Search,
+} from "lucide-react";
+import { toast } from "sonner";
+
+// XLSX type declaration for dynamic import
+type XLSXModule = typeof import("xlsx");
 
 interface Shuttle {
-  id: string
-  name: string
-  morning_shift: string
-  evening_shift: string
-  capacity: number
-  map_url: string
-  coordinates: string
-  distance_to_office: number
+  id: string;
+  service_name?: string;
+  driver_name?: string;
+  driver_phone?: string;
+  morning_shift: string;
+  evening_shift: string;
+  capacity: number;
+  map_url: string;
 }
 
-export const ShuttlesTab = memo(function ShuttlesTab() {
-  const [Shuttles, setShuttles] = useState<Shuttle[]>([])
-  const router = useRouter()
+interface ShuttlesTabProps {
+  setActiveTab?: (tab: string) => void;
+}
 
-  const [searchQuery, setSearchQuery] = useState("")
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [editingShuttle, setEditingShuttle] = useState<Shuttle | null>(null)
-  const [deletingShuttle, setDeletingShuttle] = useState<Shuttle | null>(null)
-  const [newShuttle, setNewShuttle] = useState<Partial<Shuttle>>({})
+export const ShuttlesTab = memo(function ShuttlesTab({
+  setActiveTab,
+}: ShuttlesTabProps) {
+  const [Shuttles, setShuttles] = useState<Shuttle[]>([]);
+  const router = useRouter();
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletingShuttle, setDeletingShuttle] = useState<Shuttle | null>(null);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [skipInvalidRows, setSkipInvalidRows] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [hasInvalidRows, setHasInvalidRows] = useState(false);
 
   // Helper function to save Shuttles to localStorage with useCallback
   const saveShuttlesToStorage = useCallback((ShuttlesToSave: Shuttle[]) => {
-    localStorage.setItem('Shuttles', JSON.stringify(ShuttlesToSave))
-  }, [])
+    localStorage.setItem("Shuttles", JSON.stringify(ShuttlesToSave));
+  }, []);
 
   // Load data from local storage on component mount
   useEffect(() => {
-    const savedShuttles = localStorage.getItem('Shuttles')
-    if (savedShuttles) {
-      try {
-        const parsedShuttles = JSON.parse(savedShuttles)
-        if (Array.isArray(parsedShuttles) && parsedShuttles.length > 0) {
-          setShuttles(parsedShuttles)
+    const loadShuttles = () => {
+      const savedShuttles = localStorage.getItem("Shuttles");
+      if (savedShuttles) {
+        try {
+          const parsedShuttles = JSON.parse(savedShuttles);
+          if (Array.isArray(parsedShuttles)) {
+            setShuttles(parsedShuttles);
+          }
+        } catch (error) {
+          console.error("Error loading saved Shuttles:", error);
         }
-      } catch (error) {
-        console.error('Error loading saved Shuttles:', error)
       }
-    }
-  }, [])
+    };
+
+    loadShuttles();
+
+    // Listen for shuttle updates
+    const handleShuttlesUpdate = () => {
+      loadShuttles();
+    };
+
+    window.addEventListener("shuttlesUpdated", handleShuttlesUpdate);
+    return () =>
+      window.removeEventListener("shuttlesUpdated", handleShuttlesUpdate);
+  }, []);
 
   // Save data to local storage whenever Shuttles change
   useEffect(() => {
     if (Shuttles.length > 0) {
-      localStorage.setItem('Shuttles', JSON.stringify(Shuttles))
+      localStorage.setItem("Shuttles", JSON.stringify(Shuttles));
     }
-  }, [Shuttles])
+  }, [Shuttles]);
 
   // Debounced search query for better performance
-  const debouncedSearchQuery = useDebounce(searchQuery, 300)
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // Memoized filtered Shuttles for better performance
   const filteredShuttles = useMemo(() => {
     if (debouncedSearchQuery.trim() === "") {
-      return Shuttles
+      return Shuttles;
     }
-    const searchLower = debouncedSearchQuery.toLowerCase()
+    const searchLower = debouncedSearchQuery.toLowerCase();
     return Shuttles.filter((Shuttle) => {
       return (
-        String(Shuttle.name).toLowerCase().includes(searchLower) ||
+        String(Shuttle.service_name || "")
+          .toLowerCase()
+          .includes(searchLower) ||
+        String(Shuttle.driver_name || "")
+          .toLowerCase()
+          .includes(searchLower) ||
+        String(Shuttle.driver_phone || "")
+          .toLowerCase()
+          .includes(searchLower) ||
         String(Shuttle.morning_shift).toLowerCase().includes(searchLower) ||
         String(Shuttle.evening_shift).toLowerCase().includes(searchLower) ||
         String(Shuttle.capacity).toLowerCase().includes(searchLower) ||
-        String(Shuttle.map_url).toLowerCase().includes(searchLower) ||
-        String(Shuttle.coordinates).toLowerCase().includes(searchLower) ||
-        String(Shuttle.distance_to_office).toLowerCase().includes(searchLower)
-      )
-    })
-  }, [debouncedSearchQuery, Shuttles])
+        String(Shuttle.map_url).toLowerCase().includes(searchLower)
+      );
+    });
+  }, [debouncedSearchQuery, Shuttles]);
 
   const clearSearch = () => {
-    setSearchQuery("")
-  }
-
-  const handleAddShuttle = () => {
-    if (newShuttle.name) {
-      const Shuttle: Shuttle = {
-        id: Date.now().toString(),
-        name: newShuttle.name,
-        morning_shift: newShuttle.morning_shift || "08:00",
-        evening_shift: newShuttle.evening_shift || "18:00",
-        capacity: newShuttle.capacity || 40,
-        map_url: newShuttle.map_url || "",
-        coordinates: newShuttle.coordinates || "",
-        distance_to_office: newShuttle.distance_to_office || 0,
-      }
-      const updatedShuttles = [...Shuttles, Shuttle]
-      setShuttles(updatedShuttles)
-      saveShuttlesToStorage(updatedShuttles)
-      setNewShuttle({})
-      setIsAddDialogOpen(false)
-    }
-  }
+    setSearchQuery("");
+  };
 
   const handleEditShuttle = (Shuttle: Shuttle) => {
-    setEditingShuttle(Shuttle)
-    setIsEditDialogOpen(true)
-  }
-
-  const handleUpdateShuttle = () => {
-    if (editingShuttle) {
-      const updatedShuttles = Shuttles.map(Shuttle => 
-        Shuttle.id === editingShuttle.id ? editingShuttle : Shuttle
-      )
-      setShuttles(updatedShuttles)
-      saveShuttlesToStorage(updatedShuttles)
-      setEditingShuttle(null)
-      setIsEditDialogOpen(false)
+    // Navigate to add-shuttle page with edit data
+    const editData = encodeURIComponent(JSON.stringify(Shuttle));
+    if (typeof window !== "undefined") {
+      window.location.hash = `add-shuttle?edit=${editData}`;
     }
-  }
+  };
 
   const openDeleteDialog = (Shuttle: Shuttle) => {
-    setDeletingShuttle(Shuttle)
-    setIsDeleteDialogOpen(true)
-  }
+    setDeletingShuttle(Shuttle);
+    setIsDeleteDialogOpen(true);
+  };
 
   const handleDeleteShuttle = () => {
     if (deletingShuttle) {
-      const updatedShuttles = Shuttles.filter((Shuttle) => Shuttle.id !== deletingShuttle.id)
-      setShuttles(updatedShuttles)
-      saveShuttlesToStorage(updatedShuttles)
-      setDeletingShuttle(null)
-      setIsDeleteDialogOpen(false)
+      const updatedShuttles = Shuttles.filter(
+        (Shuttle) => Shuttle.id !== deletingShuttle.id
+      );
+      setShuttles(updatedShuttles);
+      saveShuttlesToStorage(updatedShuttles);
+      toast.success("Deleted successfully 🎉", {
+        description: `${
+          deletingShuttle.service_name || "Shuttle"
+        } has been removed from your list.`,
+      });
+      setDeletingShuttle(null);
+      setIsDeleteDialogOpen(false);
     }
-  }
+  };
 
-  const handleExportExcel = () => {
-    const headers = ["Shuttle Name", "Morning Shift", "Evening Shift", "Capacity", "Map URL", "Start Location Coordinate", "Distance (km)"]
-    const data = [
-      headers,
-      ...Shuttles.map((Shuttle) => [
-        Shuttle.name,
-        Shuttle.morning_shift,
-        Shuttle.evening_shift,
-        Shuttle.capacity,
-        Shuttle.map_url,
-        Shuttle.coordinates,
-        Shuttle.distance_to_office,
-      ]),
-    ]
+  const handleExportExcel = async () => {
+    try {
+      // Dynamic import for XLSX to avoid SSR issues
+      const XLSX: XLSXModule = await import("xlsx");
 
-    const ws = XLSX.utils.aoa_to_sheet(data)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, "Shuttles")
-    
-    // Auto-size columns
-    const colWidths = headers.map((header, index) => {
-      const maxLength = Math.max(
-        header.length,
-        ...Shuttles.map(Shuttle => {
-          const values = [Shuttle.name, Shuttle.morning_shift, Shuttle.evening_shift, Shuttle.capacity.toString(), Shuttle.map_url, Shuttle.coordinates, Shuttle.distance_to_office.toString()]
-          return values[index]?.length || 0
-        })
-      )
-      return { wch: Math.min(maxLength + 2, 50) }
-    })
-    ws['!cols'] = colWidths
+      const headers = [
+        "Service Name",
+        "Driver Name",
+        "Driver Phone",
+        "Morning Shift",
+        "Evening Shift",
+        "Capacity",
+        // "Map URL",
+      ];
+      const data = [
+        headers,
+        ...Shuttles.map((Shuttle) => [
+          Shuttle.service_name || "",
+          Shuttle.driver_name || "",
+          Shuttle.driver_phone || "",
+          Shuttle.morning_shift,
+          Shuttle.evening_shift,
+          Shuttle.capacity,
+          Shuttle.map_url,
+        ]),
+      ];
 
-    XLSX.writeFile(wb, "shuttle_Shuttles.xlsx")
-  }
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Shuttles");
 
-  const handleImportExcel = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+      // Auto-size columns
+      const colWidths = headers.map((header, index) => {
+        const maxLength = Math.max(
+          header.length,
+          ...Shuttles.map((Shuttle) => {
+            const values = [
+              Shuttle.service_name || "",
+              Shuttle.driver_name || "",
+              Shuttle.driver_phone || "",
+              Shuttle.morning_shift,
+              Shuttle.evening_shift,
+              Shuttle.capacity.toString(),
+              Shuttle.map_url,
+            ];
+            return values[index]?.length || 0;
+          })
+        );
+        return { wch: Math.min(maxLength + 2, 50) };
+      });
+      ws["!cols"] = colWidths;
+
+      XLSX.writeFile(wb, "shuttles.xlsx");
+      toast.success("Exported successfully 🎉", {
+        description: "Shuttle data has been exported to Excel file.",
+      });
+    } catch (error) {
+      console.error("Error exporting Excel file:", error);
+      toast.error("Failed to export Excel file");
+    }
+  };
+
+  const handleFileSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    console.log("File selected:", file);
     if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
+      setImportFile(file);
+
+      // Pre-analyze the file to check for invalid rows
+      const reader = new FileReader();
+      reader.onload = async (e) => {
         try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer)
-          const workbook = XLSX.read(data, { type: 'array' })
-          const sheetName = workbook.SheetNames[0]
-          const worksheet = workbook.Sheets[sheetName]
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][]
+          // Dynamic import for XLSX to avoid SSR issues
+          const XLSX: XLSXModule = await import("xlsx");
+
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: "array" });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+            header: 1,
+          }) as string[][];
 
           if (jsonData.length < 2) {
-            console.error("Excel file must contain at least headers and one data row")
-            return
+            console.error(
+              "Excel file must contain at least headers and one data row"
+            );
+            toast.error(
+              "Excel file must contain at least headers and one data row"
+            );
+            return;
           }
 
-          const headers = jsonData[0]
-          const importedShuttles: Shuttle[] = jsonData
-            .slice(1)
-            .filter((row) => row.some(cell => cell && cell.toString().trim()))
-            .map((row, index) => {
-              return {
-                id: `imported-${Date.now()}-${index}`,
-                name: row[0] || "",
-                morning_shift: row[1] || "08:00",
-                evening_shift: row[2] || "18:00",
-                capacity: Number.parseInt(row[3]?.toString()) || 40,
-                map_url: row[4] || "",
-                coordinates: row[5] || "",
-                distance_to_office: Number.parseFloat(row[6]?.toString()) || 0,
-              }
-            })
+          const headers = jsonData[0];
+          console.log("Excel headers found:", headers);
 
-          const updatedShuttles = [...Shuttles, ...importedShuttles]
-          setShuttles(updatedShuttles)
-          saveShuttlesToStorage(updatedShuttles)
+          // Helper function to find column index
+          const getColumnIndex = (
+            headerName: string,
+            alternatives: string[] = []
+          ) => {
+            const searchTerms = [headerName, ...alternatives];
+
+            for (const term of searchTerms) {
+              const index = headers.findIndex(
+                (header) =>
+                  header &&
+                  header.toString().toLowerCase().trim() ===
+                    term.toLowerCase().trim()
+              );
+              if (index >= 0) {
+                return index;
+              }
+            }
+            return -1;
+          };
+
+          // Check if there are any rows with missing capacity data
+          const hasInvalidRows = jsonData.slice(1).some((row) => {
+            const capacityIndex = getColumnIndex("Capacity", [
+              "capacity",
+              "Kapasite",
+              "Yolcu Sayısı",
+              "Yolcu Sayisi",
+              "Seat",
+              "Koltuk",
+            ]);
+            const capacity = capacityIndex >= 0 ? row[capacityIndex] : "";
+            return (
+              !capacity ||
+              capacity.toString().trim() === "" ||
+              isNaN(Number(capacity))
+            );
+          });
+
+          setHasInvalidRows(hasInvalidRows);
+
+          // Only open dialog if there are invalid rows
+          if (hasInvalidRows) {
+            setIsImportDialogOpen(true);
+          } else {
+            // If no invalid rows, proceed directly with import
+            handleImportExcel(file);
+          }
+
+          console.log("Import dialog opened, hasInvalidRows:", hasInvalidRows);
         } catch (error) {
-          console.error("Error reading Excel file. Please ensure it's a valid Excel file.", error)
+          console.error("Error analyzing file:", error);
+          toast.error("Error reading Excel file");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      console.log("No file selected");
+    }
+  };
+
+  const handleImportExcel = async (file?: File) => {
+    const fileToImport = file || importFile;
+    if (!fileToImport) {
+      console.log("No import file selected");
+      return;
+    }
+
+    console.log("Starting Excel import with file:", fileToImport.name);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        // Dynamic import for XLSX to avoid SSR issues
+        const XLSX: XLSXModule = await import("xlsx");
+
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+          header: 1,
+        }) as string[][];
+
+        if (jsonData.length < 2) {
+          console.error(
+            "Excel file must contain at least headers and one data row"
+          );
+          toast.error(
+            "Excel file must contain at least headers and one data row"
+          );
+          return;
+        }
+
+        const headers = jsonData[0];
+        console.log("Excel headers found:", headers);
+
+        // Create a mapping function to find column index by header name
+        const getColumnIndex = (
+          headerName: string,
+          alternatives: string[] = []
+        ) => {
+          const searchTerms = [headerName, ...alternatives];
+
+          for (const term of searchTerms) {
+            const index = headers.findIndex(
+              (header) =>
+                header &&
+                header.toString().toLowerCase().trim() ===
+                  term.toLowerCase().trim()
+            );
+            if (index >= 0) {
+              console.log(`Found "${term}" at index:`, index);
+              return index;
+            }
+          }
+
+          console.log(`Not found: ${searchTerms.join(", ")}`);
+          return -1;
+        };
+
+        // Get the next available ID starting from 1
+        const existingIds = Shuttles.map((s) => Number.parseInt(s.id)).filter(
+          (id) => !isNaN(id)
+        );
+        const maxId = existingIds.length > 0 ? Math.max(...existingIds) : 0;
+
+        const allProcessedShuttles = jsonData
+          .slice(1)
+          .filter((row) => row.some((cell) => cell && cell.toString().trim()))
+          .map((row, index) => {
+            // Find column indices by header names with alternatives
+            const serviceNameIndex = getColumnIndex("Service Name", [
+              "name", // Excel'deki gerçek başlık
+              "Servis Adı",
+              "Servis Adi",
+              "Service",
+              "Servis",
+              "Ad",
+              "Name",
+            ]);
+            const driverNameIndex = getColumnIndex("Driver Name", [
+              "Şoför Adı",
+              "Sofor Adi",
+              "Driver",
+              "Şoför",
+              "Sofor",
+              "Ad Soyad",
+            ]);
+            const driverPhoneIndex = getColumnIndex("Driver Phone", [
+              "Şoför Telefon",
+              "Sofor Telefon",
+              "Phone",
+              "Telefon",
+              "Tel",
+              "GSM",
+            ]);
+            const morningShiftIndex = getColumnIndex("Morning Shift", [
+              "morning_st", // Excel'deki gerçek başlık
+              "Sabah Vardiya",
+              "Morning",
+              "Sabah",
+              "Başlangıç",
+              "Baslangic",
+            ]);
+            const eveningShiftIndex = getColumnIndex("Evening Shift", [
+              "evening_shi", // Excel'deki gerçek başlık
+              "Akşam Vardiya",
+              "Evening",
+              "Akşam",
+              "Aksam",
+              "Bitiş",
+              "Bitis",
+            ]);
+            const capacityIndex = getColumnIndex("Capacity", [
+              "capacity", // Excel'deki gerçek başlık
+              "Kapasite",
+              "Yolcu Sayısı",
+              "Yolcu Sayisi",
+              "Seat",
+              "Koltuk",
+            ]);
+            const mapUrlIndex = getColumnIndex("Map URL", [
+              "map_url", // Excel'deki gerçek başlık
+              "Map Link",
+              "Harita URL",
+              "Harita Link",
+              "URL",
+              "Link",
+              "Map",
+              "Harita",
+            ]);
+
+            const capacityRaw = capacityIndex >= 0 ? row[capacityIndex] : null;
+            const capacityValue = capacityRaw
+              ? Number.parseInt(capacityRaw.toString())
+              : null;
+
+            const shuttle = {
+              id: String(maxId + index + 1), // Auto-increment ID
+              service_name:
+                serviceNameIndex >= 0 ? row[serviceNameIndex] || "" : "",
+              driver_name:
+                driverNameIndex >= 0 ? row[driverNameIndex] || "" : "",
+              driver_phone:
+                driverPhoneIndex >= 0 ? row[driverPhoneIndex] || "" : "",
+              morning_shift:
+                morningShiftIndex >= 0
+                  ? row[morningShiftIndex] || "08:00"
+                  : "08:00",
+              evening_shift:
+                eveningShiftIndex >= 0
+                  ? row[eveningShiftIndex] || "18:00"
+                  : "18:00",
+              capacity: capacityValue,
+              map_url: mapUrlIndex >= 0 ? row[mapUrlIndex] || "" : "",
+            };
+
+            console.log(`Row ${index + 1} data:`, {
+              serviceNameIndex,
+              serviceNameValue:
+                serviceNameIndex >= 0 ? row[serviceNameIndex] : "NOT_FOUND",
+              mapUrlIndex,
+              mapUrlValue: mapUrlIndex >= 0 ? row[mapUrlIndex] : "NOT_FOUND",
+              capacityValue,
+              shuttle,
+            });
+
+            return shuttle;
+          });
+
+        // Filter out shuttles with invalid capacity (empty, null, undefined, NaN or <= 0)
+        let invalidCapacityCount = 0;
+        const validCapacityShuttles = allProcessedShuttles.filter((shuttle) => {
+          const isValidCapacity =
+            shuttle.capacity !== null &&
+            shuttle.capacity !== undefined &&
+            !isNaN(shuttle.capacity) &&
+            shuttle.capacity > 0;
+          if (!isValidCapacity) {
+            invalidCapacityCount++;
+            console.log(`Skipping shuttle with invalid capacity:`, {
+              serviceName: shuttle.service_name,
+              capacity: shuttle.capacity,
+              row: shuttle,
+            });
+          }
+          return isValidCapacity;
+        });
+
+        // Check if all rows have invalid capacity
+        if (validCapacityShuttles.length === 0) {
+          toast.error(
+            "No shuttles with valid capacity data found. Please ensure at least one shuttle has capacity information."
+          );
+          setIsImportDialogOpen(false);
+          setImportFile(null);
+
+          // Reset file input
+          const fileInput = document.getElementById(
+            "Shuttle-excel-import"
+          ) as HTMLInputElement;
+          if (fileInput) {
+            fileInput.value = "";
+          }
+          return;
+        }
+
+        // Check if checkbox is not checked and there are invalid capacity rows
+        if (!skipInvalidRows && invalidCapacityCount > 0) {
+          toast.error(
+            `Found ${invalidCapacityCount} shuttle(s) with invalid capacity. Please enable "Skip invalid rows" to continue or fix the data.`
+          );
+
+          // Reset file input and close dialog so same file can be imported again
+          const fileInput = document.getElementById(
+            "Shuttle-excel-import"
+          ) as HTMLInputElement;
+          if (fileInput) {
+            fileInput.value = "";
+          }
+          setIsImportDialogOpen(false);
+          setImportFile(null);
+          setSkipInvalidRows(false);
+          return;
+        }
+
+        // Filter out duplicate shuttles
+        let duplicateCount = 0;
+        const importedShuttles: Shuttle[] = (
+          validCapacityShuttles as Shuttle[]
+        ).filter((shuttle) => {
+          // Check if shuttle already exists in current Shuttles list
+          const isDuplicate = Shuttles.some(
+            (existing) =>
+              existing.service_name === shuttle.service_name &&
+              existing.driver_name === shuttle.driver_name &&
+              existing.driver_phone === shuttle.driver_phone
+          );
+          if (isDuplicate) {
+            duplicateCount++;
+            console.log(`Skipping duplicate shuttle:`, {
+              serviceName: shuttle.service_name,
+              driverName: shuttle.driver_name,
+              driverPhone: shuttle.driver_phone,
+            });
+          }
+          return !isDuplicate;
+        });
+
+        // Check if all valid shuttles are duplicates
+        if (importedShuttles.length === 0 && validCapacityShuttles.length > 0) {
+          toast.error(
+            `All ${duplicateCount} shuttle(s) already exist in the system. No new data to import.`
+          );
+          setIsImportDialogOpen(false);
+          setImportFile(null);
+
+          // Reset file input
+          const fileInput = document.getElementById(
+            "Shuttle-excel-import"
+          ) as HTMLInputElement;
+          if (fileInput) {
+            fileInput.value = "";
+          }
+          return;
+        }
+
+        const updatedShuttles = [...Shuttles, ...importedShuttles];
+        setShuttles(updatedShuttles);
+        saveShuttlesToStorage(updatedShuttles);
+
+        // Show success toast with information about skipped rows
+        const totalSkipped = invalidCapacityCount + duplicateCount;
+        if (totalSkipped > 0) {
+          const reasons = [];
+          if (invalidCapacityCount > 0) {
+            reasons.push(`${invalidCapacityCount} invalid capacity`);
+          }
+          if (duplicateCount > 0) {
+            reasons.push(`${duplicateCount} duplicate`);
+          }
+          toast.success("Import completed with warnings ⚠️", {
+            description: `${
+              importedShuttles.length
+            } shuttles imported successfully. ${totalSkipped} rows skipped (${reasons.join(
+              ", "
+            )}).`,
+          });
+        } else {
+          toast.success("Import successful 🎉", {
+            description: `${importedShuttles.length} shuttles have been imported successfully.`,
+          });
+        }
+
+        // Reset states
+        setIsImportDialogOpen(false);
+        setImportFile(null);
+        setSkipInvalidRows(false);
+        setHasInvalidRows(false);
+
+        // Reset file input
+        const fileInput = document.getElementById(
+          "Shuttle-excel-import"
+        ) as HTMLInputElement;
+        if (fileInput) {
+          fileInput.value = "";
+        }
+      } catch (error) {
+        console.error(
+          "Error reading Excel file. Please ensure it's a valid Excel file.",
+          error
+        );
+        toast.error(
+          "Failed to import Excel file. Please ensure it's a valid Excel file."
+        );
+
+        // Reset file input
+        const fileInput = document.getElementById(
+          "Shuttle-excel-import"
+        ) as HTMLInputElement;
+        if (fileInput) {
+          fileInput.value = "";
         }
       }
-      reader.readAsArrayBuffer(file)
-    }
-  }
-
-  const resetNewShuttle = () => {
-    setNewShuttle({})
-    setIsAddDialogOpen(false)
-  }
-
-  const resetEditShuttle = () => {
-    setEditingShuttle(null)
-    setIsEditDialogOpen(false)
-  }
+    };
+    reader.readAsArrayBuffer(fileToImport);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Shuttle Management</h2>
-          <p className="text-muted-foreground">Manage shuttle Shuttles and routes for employee transportation</p>
+          <h2 className="text-2xl font-bold tracking-tight">
+            Shuttle Management
+          </h2>
+          <p className="text-muted-foreground">
+            Manage shuttles and routes for employee transportation
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleExportExcel}>
@@ -258,128 +686,34 @@ export const ShuttlesTab = memo(function ShuttlesTab() {
             <label htmlFor="Shuttle-excel-import" className="cursor-pointer">
               <Upload className="mr-2 h-4 w-4" />
               Import Excel
-              <input id="Shuttle-excel-import" type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImportExcel} />
+              <input
+                id="Shuttle-excel-import"
+                type="file"
+                accept=".xlsx,.xls"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
             </label>
           </Button>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Shuttle
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Add New Shuttle</DialogTitle>
-                <DialogDescription>Enter the Shuttle details below.</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="Shuttle-name" className="text-right">
-                    Name
-                  </Label>
-                  <Input
-                    id="Shuttle-name"
-                    value={newShuttle.name || ""}
-                    onChange={(e) => setNewShuttle({ ...newShuttle, name: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="morning-shift" className="text-right">
-                    Morning Shift
-                  </Label>
-                  <Input
-                    id="morning-shift"
-                    type="time"
-                    value={newShuttle.morning_shift || ""}
-                    onChange={(e) => setNewShuttle({ ...newShuttle, morning_shift: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="evening-shift" className="text-right">
-                    Evening Shift
-                  </Label>
-                  <Input
-                    id="evening-shift"
-                    type="time"
-                    value={newShuttle.evening_shift || ""}
-                    onChange={(e) => setNewShuttle({ ...newShuttle, evening_shift: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="capacity" className="text-right">
-                    Capacity
-                  </Label>
-                  <Input
-                    id="capacity"
-                    type="number"
-                    value={newShuttle.capacity || ""}
-                    onChange={(e) => {
-                      const value = Number.parseInt(e.target.value)
-                      if (!isNaN(value)) {
-                        setNewShuttle({ ...newShuttle, capacity: value })
-                      }
-                    }}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="map-url" className="text-right">
-                    Map URL
-                  </Label>
-                  <Input
-                    id="map-url"
-                    value={newShuttle.map_url || ""}
-                    onChange={(e) => setNewShuttle({ ...newShuttle, map_url: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="coordinates" className="text-right">
-                    Coordinates
-                  </Label>
-                  <Input
-                    id="coordinates"
-                    value={newShuttle.coordinates || ""}
-                    onChange={(e) => setNewShuttle({ ...newShuttle, coordinates: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="distance" className="text-right">
-                    Distance to Office
-                  </Label>
-                  <Input
-                    id="distance"
-                    type="number"
-                    step="0.1"
-                    value={newShuttle.distance_to_office || ""}
-                    onChange={(e) => {
-                      const value = Number.parseFloat(e.target.value)
-                      if (!isNaN(value)) {
-                        setNewShuttle({ ...newShuttle, distance_to_office: value })
-                      }
-                    }}
-                    className="col-span-3"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button onClick={handleAddShuttle}>Add Shuttle</Button>
-                <Button variant="outline" onClick={resetNewShuttle}>Cancel</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button
+            onClick={() => {
+              // Clear URL hash to ensure fresh form
+              window.location.hash = "add-shuttle";
+              setActiveTab?.("add-shuttle");
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Shuttle
+          </Button>
         </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Shuttles</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Shuttles
+            </CardTitle>
             <Bus className="h-6 w-6 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -388,16 +722,22 @@ export const ShuttlesTab = memo(function ShuttlesTab() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Capacity</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Capacity
+            </CardTitle>
             <Bus className="h-6 w-6 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{Shuttles.reduce((sum, s) => sum + s.capacity, 0)}</div>
+            <div className="text-2xl font-bold">
+              {Shuttles.reduce((sum, s) => sum + s.capacity, 0)}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Assigned Employees</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Assigned Employees
+            </CardTitle>
             <Bus className="h-6 w-6 text-orange-600" />
           </CardHeader>
           <CardContent>
@@ -407,23 +747,30 @@ export const ShuttlesTab = memo(function ShuttlesTab() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Available Seats</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Available Seats
+            </CardTitle>
             <Bus className="h-6 w-6 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{Shuttles.reduce((sum, s) => sum + s.capacity, 0)}</div>
+            <div className="text-2xl font-bold">
+              {Shuttles.reduce((sum, s) => sum + s.capacity, 0)}
+            </div>
             <p className="text-xs text-muted-foreground">All seats available</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Distance</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Active Drivers
+            </CardTitle>
             <Bus className="h-6 w-6 text-purple-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {Shuttles.length > 0 ? (Shuttles.reduce((sum, s) => sum + s.distance_to_office, 0) / Shuttles.length).toFixed(1) : "0.0"} km
+              {Shuttles.filter((s) => s.driver_name).length}
             </div>
+            <p className="text-xs text-muted-foreground">Drivers assigned</p>
           </CardContent>
         </Card>
       </div>
@@ -433,7 +780,9 @@ export const ShuttlesTab = memo(function ShuttlesTab() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Shuttles ({filteredShuttles.length})</CardTitle>
-              <CardDescription>All shuttle Shuttles in the system</CardDescription>
+              <CardDescription>
+                All shuttle Shuttles in the system
+              </CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
@@ -462,39 +811,70 @@ export const ShuttlesTab = memo(function ShuttlesTab() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Shuttle Name</TableHead>
+                <TableHead>ID</TableHead>
+                <TableHead>Service Name</TableHead>
+                <TableHead>Driver Name</TableHead>
+                <TableHead>Driver Phone</TableHead>
                 <TableHead>Morning Shift</TableHead>
                 <TableHead>Evening Shift</TableHead>
                 <TableHead>Capacity</TableHead>
-                <TableHead>Map URL </TableHead>
-                <TableHead>Start Loc. Coordinate</TableHead>
-                <TableHead>Distance (km)</TableHead>
+                {/* <TableHead>Map URL</TableHead> */}
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredShuttles.map((Shuttle) => (
                 <TableRow key={Shuttle.id}>
-                  <TableCell className="font-medium truncate max-w-[200px]">{Shuttle.name}</TableCell>
+                  <TableCell className="font-medium truncate max-w-[100px]">
+                    {Shuttle.id}
+                  </TableCell>
+                  <TableCell className="truncate max-w-[150px]">
+                    {Shuttle.service_name || "-"}
+                  </TableCell>
+                  <TableCell className="truncate max-w-[150px]">
+                    {Shuttle.driver_name || "-"}
+                  </TableCell>
+                  <TableCell className="truncate max-w-[120px]">
+                    {Shuttle.driver_phone || "-"}
+                  </TableCell>
                   <TableCell>{Shuttle.morning_shift}</TableCell>
                   <TableCell>{Shuttle.evening_shift}</TableCell>
                   <TableCell>{Shuttle.capacity}</TableCell>
-                  <TableCell className="max-w-[200px] truncate max-w-[150px]">
-                    <a href={Shuttle.map_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                      {Shuttle.map_url}
-                    </a>
-                  </TableCell>
-                  <TableCell className="max-w-[100px] truncate">{Shuttle.coordinates}</TableCell>
-                  <TableCell>{Shuttle.distance_to_office} km</TableCell>
+                  {/* <TableCell className="max-w-[150px] truncate">
+                    {Shuttle.map_url ? (
+                      <a
+                        href={Shuttle.map_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        {Shuttle.map_url}
+                      </a>
+                    ) : (
+                      "-"
+                    )}
+                  </TableCell> */}
                   <TableCell>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => router.push(`/shuttles/${Shuttle.id}`)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => router.push(`/shuttles/${Shuttle.id}`)}
+                      >
                         Details
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleEditShuttle(Shuttle)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditShuttle(Shuttle)}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => openDeleteDialog(Shuttle)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openDeleteDialog(Shuttle)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -506,136 +886,98 @@ export const ShuttlesTab = memo(function ShuttlesTab() {
         </CardContent>
       </Card>
 
-      {/* Edit Shuttle Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit Shuttle</DialogTitle>
-            <DialogDescription>Update the Shuttle details below.</DialogDescription>
-          </DialogHeader>
-          {editingShuttle && (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-name" className="text-right">
-                  Name
-                </Label>
-                <Input
-                  id="edit-name"
-                  value={editingShuttle.name}
-                  onChange={(e) => setEditingShuttle({ ...editingShuttle, name: e.target.value })}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-morning-shift" className="text-right">
-                  Morning Shift
-                </Label>
-                <Input
-                  id="edit-morning-shift"
-                  type="time"
-                  value={editingShuttle.morning_shift}
-                  onChange={(e) => setEditingShuttle({ ...editingShuttle, morning_shift: e.target.value })}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-evening-shift" className="text-right">
-                  Evening Shift
-                </Label>
-                <Input
-                  id="edit-evening-shift"
-                  type="time"
-                  value={editingShuttle.evening_shift}
-                  onChange={(e) => setEditingShuttle({ ...editingShuttle, evening_shift: e.target.value })}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-capacity" className="text-right">
-                  Capacity
-                </Label>
-                <Input
-                  id="edit-capacity"
-                  type="number"
-                  value={editingShuttle.capacity || ""}
-                  onChange={(e) => {
-                    const value = Number.parseInt(e.target.value)
-                    if (!isNaN(value)) {
-                      setEditingShuttle({ ...editingShuttle, capacity: value })
-                    }
-                  }}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4 ">
-                <Label htmlFor="edit-map-url" className="text-right">
-                  Map URL
-                </Label>
-                <Input
-                  id="edit-map-url"
-                  value={editingShuttle.map_url || ""}
-                  onChange={(e) => setEditingShuttle({ ...editingShuttle, map_url: e.target.value })}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-coordinates" className="text-right">
-                  Coordinates
-                </Label>
-                <Input
-                  id="edit-coordinates"
-                  value={editingShuttle.coordinates || ""}
-                  onChange={(e) => setEditingShuttle({ ...editingShuttle, coordinates: e.target.value })}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-distance" className="text-right">
-                  Distance (km)
-                </Label>
-                <Input
-                  id="edit-distance"
-                  type="number"
-                  step="0.1"
-                  value={editingShuttle.distance_to_office || ""}
-                  onChange={(e) => {
-                    const value = Number.parseFloat(e.target.value)
-                    if (!isNaN(value)) {
-                      setEditingShuttle({ ...editingShuttle, distance_to_office: value })
-                    }
-                  }}
-                  className="col-span-3"
-                />
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button onClick={handleUpdateShuttle}>Update Shuttle</Button>
-            <Button variant="outline" onClick={resetEditShuttle}>Cancel</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Delete Shuttle</DialogTitle>
+            <DialogTitle></DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete Shuttle <strong>{deletingShuttle?.name}</strong>?
+              Are you sure you want to delete Shuttle{" "}
+              <strong>
+                {deletingShuttle?.service_name || deletingShuttle?.id}
+              </strong>
+              ?
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <p className="text-sm text-muted-foreground">
-              This action cannot be undone. The Shuttle will be permanently removed from the system.
+              This action cannot be undone. The Shuttle will be permanently
+              removed from the system.
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDeleteShuttle}>Delete Shuttle</Button>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteShuttle}>
+              Delete Shuttle
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Excel Dialog */}
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Import Excel File</DialogTitle>
+            <DialogDescription>
+              {hasInvalidRows
+                ? "Some rows have missing capacity data. You can choose to skip them."
+                : "Import shuttles from Excel file."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {hasInvalidRows && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="skip-invalid-shuttles"
+                  checked={skipInvalidRows}
+                  onCheckedChange={(checked) =>
+                    setSkipInvalidRows(checked as boolean)
+                  }
+                />
+                <Label
+                  htmlFor="skip-invalid-shuttles"
+                  className="text-sm font-medium"
+                >
+                  Skip invalid rows (rows without capacity will be skipped)
+                </Label>
+              </div>
+            )}
+            {importFile && (
+              <div className="text-sm text-muted-foreground">
+                Selected file: {importFile.name}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsImportDialogOpen(false);
+                setImportFile(null);
+                setSkipInvalidRows(false);
+                setHasInvalidRows(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                console.log("Import button clicked, importFile:", importFile);
+                console.log("Skip invalid rows:", skipInvalidRows);
+                handleImportExcel();
+              }}
+            >
+              Import
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  )
-})
+  );
+});
